@@ -46,3 +46,10 @@ func DeleteTeacher(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Teacher deleted"})
 }
+
+func GetTeachersBySubject(c *gin.Context) {
+	subjectID := c.Param("subject_id")
+	var teachers []models.Teacher
+	config.DB.Where("subject_id = ?", subjectID).Find(&teachers)
+	c.JSON(http.StatusOK, teachers)
+}

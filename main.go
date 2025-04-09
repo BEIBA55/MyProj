@@ -10,7 +10,7 @@ func main() {
 	config.ConnectDB()
 
 	// Автоматическая миграция моделей
-	config.DB.AutoMigrate(&models.Student{}, &models.Teacher{})
+	config.DB.AutoMigrate(&models.Subject{}, &models.Teacher{}, &models.Student{})
 
 	r := routes.SetupRouter()
 	r.Run(":8080")
