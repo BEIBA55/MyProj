@@ -20,6 +20,9 @@ func CreateTeacher(c *gin.Context) {
 		return
 	}
 	config.DB.Create(&teacher)
+
+	config.DB.Preload("Subject").First(&teacher, teacher.ID)
+
 	c.JSON(http.StatusOK, teacher)
 }
 
