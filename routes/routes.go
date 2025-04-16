@@ -2,11 +2,18 @@ package routes
 
 import (
 	"MyProj/controllers"
+	"MyProj/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
+
+	r.POST("/register", controllers.Register)
+	r.POST("/login", controllers.Login)
+
+	auth := r.Group("/")
+	auth.Use(middleware.AuthMiddleware())
 
 	// Students
 	r.GET("/students", controllers.GetStudents)
@@ -22,6 +29,11 @@ func SetupRouter() *gin.Engine {
 
 	r.GET("/subjects/:subject_id/teachers", controllers.GetTeachersBySubject)
 	r.GET("/teachers/:teacher_id/students", controllers.GetStudentsByTeacher)
+
+	r.GET("/subjects", controllers.GetSubjects)
+	r.POST("/subjects", controllers.CreateSubject)
+	r.PUT("/subjects/:id", controllers.UpdateSubject)
+	r.DELETE("/subjects/:id", controllers.DeleteSubject)
 
 	return r
 }

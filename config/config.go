@@ -18,3 +18,6 @@ func ConnectDB() {
 	DB = db
 	fmt.Println("Database connection established")
 }
+func GetDB() *gorm.DB {
+	return DB
+}

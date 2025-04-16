@@ -5,12 +5,35 @@ import (
 	"MyProj/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 func GetStudents(c *gin.Context) {
+
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1")) // Страница по умолчанию 1
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10")) // Количество записей на странице по умолчанию 10
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
 	var students []models.Student
-	config.DB.Find(&students)
-	c.JSON(http.StatusOK, students)
+	var totalStudents int64
+	config.DB.Model(&models.Student{}).Count(&totalStudents)
+
+	config.DB.Offset(offset).Limit(limit).Find(&students)
+
+	c.JSON(http.StatusOK, gin.H{
+		"page":       page,
+		"limit":      limit,
+		"total":      totalStudents,
+		"totalPages": (totalStudents + int64(limit) - 1) / int64(limit), // Вычисляем количество страниц
+		"students":   students,
+	})
 }
 
 func CreateStudent(c *gin.Context) {
@@ -42,8 +65,8 @@ func DeleteStudent(c *gin.Context) {
 }
 
 func GetStudentsByTeacher(c *gin.Context) {
-	teacherID := c.Param("teacher_id")
 	var students []models.Student
-	config.DB.Where("teacher_id = ?", teacherID).Find(&students)
+	teacherID := c.DefaultQuery("teacher_id", "0")
+	config.DB.Select("name").Where("teacher_id = ?", teacherID).Order("name").Find(&students)
 	c.JSON(http.StatusOK, students)
 }
