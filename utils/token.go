@@ -1,33 +1,45 @@
 package utils
 
 import (
-	"errors"
-	"time"
-
 	"github.com/golang-jwt/jwt/v4"
+	"time"
 )
 
-var jwtKey = []byte("your_secret_key")
+var jwtKey = []byte("supersecret")
+
+type JWTClaim struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
 
 func GenerateJWT(username string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"exp":      time.Now().Add(time.Hour * 72).Unix(),
-	})
+	expirationTime := time.Now().Add(24 * time.Hour)
+
+	claims := &JWTClaim{
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtKey)
 }
 
-func ValidateToken(tokenStr string) (interface{}, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
+func ValidateToken(tokenString string) (*JWTClaim, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &JWTClaim{}, func(t *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
 	})
 
-	if err != nil || !token.Valid {
+	if err != nil {
 		return nil, err
 	}
 
-	return token.Claims, nil
+	claims, ok := token.Claims.(*JWTClaim)
+	if !ok || !token.Valid {
+		return nil, err
+	}
+
+	return claims, nil
 }

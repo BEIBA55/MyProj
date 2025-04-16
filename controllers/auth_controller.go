@@ -1,19 +1,14 @@
 package controllers
 
 import (
-	"net/http"
-	"time"
-
 	"MyProj/config"
 	"MyProj/models"
 	"MyProj/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
+	"net/http"
 )
-
-var DB *gorm.DB = config.GetDB()
 
 func Register(c *gin.Context) {
 	var user models.User
@@ -24,42 +19,44 @@ func Register(c *gin.Context) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Пароль не хешируется"})
 		return
 	}
+
 	user.Password = string(hashedPassword)
-	user.CreatedAt = time.Now()
 
-	if err := DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+	if err := config.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Пользователь уже существует"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Успешная регистрация"})
 }
 
 func Login(c *gin.Context) {
 	var input models.User
 	var user models.User
+
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
 	}
 
-	if err := DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+	config.DB.Where("username = ?", input.Username).First(&user)
+	if user.ID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не найден"})
 		return
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный пароль"})
 		return
 	}
 
 	token, err := utils.GenerateJWT(user.Username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации токена"})
 		return
 	}
 

@@ -2,23 +2,24 @@ package middleware
 
 import (
 	"MyProj/utils"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strings"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
-		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
-			c.Abort()
+		authHeader := c.GetHeader("Authorization")
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Нет токена"})
 			return
 		}
 
-		if _, err := utils.ValidateToken(token); err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-			c.Abort()
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+
+		_, err := utils.ValidateToken(token)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Неверный токен"})
 			return
 		}
 
