@@ -73,3 +73,18 @@ func GetStudentsByTeacher(c *gin.Context) {
 	config.DB.Select("name").Where("teacher_id = ?", teacherID).Order("name").Find(&students)
 	c.JSON(http.StatusOK, students)
 }
+
+func GetStudentCount(c *gin.Context) {
+	var count int64
+	config.DB.Model(&models.Student{}).Count(&count)
+	c.JSON(http.StatusOK, gin.H{"student_count": count})
+}
+func GetStudentsWithoutTeacher(c *gin.Context) {
+	var students []models.Student
+	if err := config.DB.Where("teacher_id IS NULL").Find(&students).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to retrieve students without teacher"})
+		return
+	}
+
+	c.JSON(http.StatusOK, students)
+}

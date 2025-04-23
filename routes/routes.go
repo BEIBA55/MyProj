@@ -35,5 +35,10 @@ func SetupRouter() *gin.Engine {
 	z.PUT("/subjects/:id", controllers.UpdateSubject)
 	z.DELETE("/subjects/:id", controllers.DeleteSubject)
 
+	z.GET("/stats/teachers/count", controllers.GetTeacherCount)
+	z.GET("/stats/students/count", controllers.GetStudentCount)
+
+	z.GET("/students/without-teacher", controllers.GetStudentsWithoutTeacher)
+
 	return r
 }

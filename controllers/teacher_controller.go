@@ -56,3 +56,9 @@ func GetTeachersBySubject(c *gin.Context) {
 	config.DB.Where("subject_id = ?", subjectID).Find(&teachers)
 	c.JSON(http.StatusOK, teachers)
 }
+
+func GetTeacherCount(c *gin.Context) {
+	var count int64
+	config.DB.Model(&models.Teacher{}).Count(&count)
+	c.JSON(http.StatusOK, gin.H{"teacher_count": count})
+}
